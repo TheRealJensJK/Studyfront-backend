@@ -2,9 +2,10 @@
   "name": "research-app-backend",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "start": "node Express.js",
-    "test": "jest"
+    "test": "jest --verbose"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
