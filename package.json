@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "node Express.js",
-    "test": "jest",
+    "test": "jest --verbose",
     "lint":"eslint"
   },
   "dependencies": {

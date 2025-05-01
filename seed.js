@@ -1,6 +1,6 @@
-const mongoose = require("mongoose");
-const Study = require("./models/study");
-require("dotenv").config();
+import mongoose from "mongoose";
+import Study from "./models/study.js";
+import "dotenv/config";
 
 const seedStudies = async () => {
   try {
@@ -35,3 +35,4 @@ const seedStudies = async () => {
     await mongoose.disconnect();
   }
 };
+seedStudies().catch(console.error);
