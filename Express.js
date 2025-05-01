@@ -10,6 +10,7 @@ import studyCreationRoute from "./api/studyCreation/route.js";
 import idRoute from "./api/studies/idRoute.js";
 import questionsRoute from "./api/studies/questionsRoute.js";
 import uploadRoute from "./api/upload/route.js";
+import usersRoute from "./api/users/route.js";
 import { authMiddleware } from "./middleware/authMiddleware.js";
 
 dotenv.config({ path:"./.env" }); // Load environment variables
@@ -57,6 +58,8 @@ app.use("/api/studies", idRoute);
 app.use("/api/studies", questionsRoute);
 
 app.use("/api/upload", uploadRoute);
+
+app.use("/api/users", usersRoute);
 
 // Login Route
 app.use("/api/auth", loginRoute);
