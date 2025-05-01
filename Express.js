@@ -39,7 +39,7 @@ app.get('/dashboard', authMiddleware , (req, res) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET); // Verify the token
     res.json({ message: 'Welcome to the dashboard!', user: decoded });
   } catch (error) {
-    res.status(401).json({ message: 'Invalid token' });
+    res.status(401).json({ message: 'Invalid token', error });
   }
 });
 
