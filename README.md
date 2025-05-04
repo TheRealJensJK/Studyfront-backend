@@ -1,8 +1,9 @@
-# Studyfront backend 
+# Studyfront backend
+The frontend repository can be found [here!](https://github.com/Jakubo0451/Studyfront-frontend)
 
 ## Getting started 
 
-The backend server can be run localy br running the command: 
+The backend server can be run localy by running the command: 
 ```bash
 node Express.js
 ```
