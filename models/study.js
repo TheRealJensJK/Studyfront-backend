@@ -18,6 +18,7 @@ const studySchema = new Schema(
       type: String,
       required: true,
     },
+    active: { type: Boolean, default: false },
     questions: [questionSchema], 
     files: [
       {
