@@ -1,4 +1,5 @@
 import mongoose, { Schema } from 'mongoose';
+import File from './file';
 
 const questionSchema = new Schema({
   _id: { type: Schema.Types.ObjectId, default: () => new mongoose.Types.ObjectId() },
@@ -24,14 +25,7 @@ const studySchema = new Schema(
       required: true
     },
     questions: [questionSchema], 
-    files: [
-      {
-        //Array of file metadata
-        filename: String,
-        path: String,
-        type: String,
-      },
-    ],
+    files: [File.schema],
     createdAt: {
       type: Date,
       default: Date.now,
