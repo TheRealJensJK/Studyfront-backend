@@ -55,17 +55,23 @@ router.delete("/:id", async (req, res) => {
 router.put("/:id", async (req, res) => {
   try {
     await dbConnect();
-    const { questions } = req.body;
+    const { active, completed, questions } = req.body; // Extract flags and questions from the request body
     const { id: studyId } = req.params;
 
     if (!ObjectId.isValid(studyId)) {
       return res.status(400).json({ error: "Invalid study ID" });
     }
 
+    // Build the update object dynamically
+    const updateFields = {};
+    if (typeof active !== "undefined") updateFields.active = active;
+    if (typeof completed !== "undefined") updateFields.completed = completed;
+    if (questions) updateFields.questions = questions;
+
     const updatedStudy = await Study.findByIdAndUpdate(
       studyId,
-      { $set: { questions: questions } },
-      { new: true }
+      { $set: updateFields }, // Dynamically update fields
+      { new: true } // Return the updated document
     );
 
     if (!updatedStudy) {
@@ -75,7 +81,7 @@ router.put("/:id", async (req, res) => {
     res.status(200).json(updatedStudy);
   } catch (error) {
     console.error("Error updating study:", error);
-    res.status(500).json({ error: "Failed to update study questions" });
+    res.status(500).json({ error: "Failed to update study" });
   }
 });
 
