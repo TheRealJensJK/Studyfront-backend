@@ -55,7 +55,7 @@ router.delete("/:id", async (req, res) => {
 router.put("/:id", async (req, res) => {
   try {
     await dbConnect();
-    const { active, published, questions } = req.body; // Extract flags and questions from the request body
+    const { active, completed, questions } = req.body; // Extract flags and questions from the request body
     const { id: studyId } = req.params;
 
     if (!ObjectId.isValid(studyId)) {
@@ -65,6 +65,7 @@ router.put("/:id", async (req, res) => {
     // Build the update object dynamically
     const updateFields = {};
     if (typeof active !== "undefined") updateFields.active = active;
+    if (typeof completed !== "undefined") updateFields.completed = completed;
     if (questions) updateFields.questions = questions;
 
     const updatedStudy = await Study.findByIdAndUpdate(
