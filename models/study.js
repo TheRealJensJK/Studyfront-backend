@@ -18,8 +18,11 @@ const studySchema = new Schema(
       type: String,
       required: true,
     },
-    active: { type: Boolean, default: false },
-    completed: { type: Boolean, default: false },
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
     questions: [questionSchema], 
     files: [
       {

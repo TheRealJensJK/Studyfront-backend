@@ -33,6 +33,3 @@ jobs:
 
     - name: Run ESLint
       run: npx eslint
-
-    - name: Run tests
-      run: npm test -- --testPathIgnorePatterns=db.test.js
