@@ -155,7 +155,7 @@ describe("Studies API by ID", () => {
         .send({ questions: ["Question 1"] });
 
       expect(response.status).toBe(500);
-      expect(response.body.error).toBe("Failed to update study questions");
+      expect(response.body.error).toBe("Failed to update study");
     });
   });
 });
