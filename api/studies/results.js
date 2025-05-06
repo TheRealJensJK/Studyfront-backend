@@ -1,7 +1,7 @@
 import express from 'express';
 import { ObjectId } from 'mongodb';
 import dbConnect from '../../lib/dbconnect.js';
-import Result from '../../models/resoults.js';
+import Result from '../../models/results.js';
 
 const router = express.Router();
 
