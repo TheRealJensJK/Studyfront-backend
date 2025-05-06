@@ -1,5 +1,5 @@
 import mongoose, { Schema } from 'mongoose';
-import File from './file';
+import File from './file.js';
 
 const questionSchema = new Schema({
   _id: { type: Schema.Types.ObjectId, default: () => new mongoose.Types.ObjectId() },
