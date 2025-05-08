@@ -13,19 +13,24 @@ import uploadRoute from "./api/upload/route.js";
 import usersRoute from "./api/users/route.js";
 import { authMiddleware } from "./middleware/authMiddleware.js";
 import Result from './api/studies/results.js';
+import responseRoutes from "./api/studyTake/responseRoutes.js";
+import studyTakeRoutes from './api/studyTake/studyRoutes.js';
 
 dotenv.config({ path:"./.env" }); // Load environment variables
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-app.use(express.json());
 
-// Middleware
 app.use(cors({
-  origin: "http://localhost:3000", // Allow requests from the frontend
-  credentials: true, // Allow cookies and credentials
-  allowedHeaders: ["Content-Type", "Authorization"],
+  origin: "http://localhost:3000",
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
 }));
+
+app.use(express.json());
+app.use("/api/responses", responseRoutes);
+app.use("/api/studies/public", studyTakeRoutes);
 
 // Dashboard Route
 app.get('/dashboard', authMiddleware , (req, res) => {
