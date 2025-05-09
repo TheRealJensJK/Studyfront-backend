@@ -4,9 +4,10 @@ import File from './file.js';
 const questionSchema = new Schema({
   _id: { type: Schema.Types.ObjectId, default: () => new mongoose.Types.ObjectId() },
   id: { type: String, required: true },
+  title: { type: String },
   type: { type: String, required: true },
   data: { type: Schema.Types.Mixed, required: true },
-  file: { type: Schema.Types.Mixed }
+  file: [File.schema],
 });
 
 const studySchema = new Schema(

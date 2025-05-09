@@ -55,7 +55,7 @@ router.delete("/:id", async (req, res) => {
 router.put("/:id", async (req, res) => {
   try {
     await dbConnect();
-    const { active, completed, questions } = req.body; // Extract flags and questions from the request body
+    const { active, completed, questions, title, description } = req.body; // Extract fields from the request body
     const { id: studyId } = req.params;
 
     if (!ObjectId.isValid(studyId)) {
@@ -66,11 +66,17 @@ router.put("/:id", async (req, res) => {
     const updateFields = {};
     if (typeof active !== "undefined") updateFields.active = active;
     if (typeof completed !== "undefined") updateFields.completed = completed;
-    if (questions) updateFields.questions = questions;
+    if (title) updateFields.title = title;
+    if (description) updateFields.description = description;
+
+    // Append new questions instead of overwriting
+    if (questions) {
+      updateFields.$push = { questions: { $each: questions } };
+    }
 
     const updatedStudy = await Study.findByIdAndUpdate(
       studyId,
-      { $set: updateFields }, // Dynamically update fields
+      updateFields, // Dynamically update fields
       { new: true } // Return the updated document
     );
 
