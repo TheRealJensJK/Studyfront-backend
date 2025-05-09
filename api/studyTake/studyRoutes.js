@@ -19,7 +19,7 @@ router.get("/:id", async (req, res) => {
     }
 
     // This check might be causing the issue
-    if (study.status !== 'published') {
+    if (study.status !== 'active') {
       return res.status(403).json({ message: "This study is not currently available" });
     }
     
