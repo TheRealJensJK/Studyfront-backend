@@ -1,5 +1,4 @@
 import express from 'express';
-import mongoose from 'mongoose';
 import Study from '../../models/study.js';
 const router = express.Router();
 
@@ -18,10 +17,12 @@ router.get("/:id", async (req, res) => {
       return res.status(404).json({ message: "This study does not exist" });
     }
 
+    /*
     // This check might be causing the issue
-    if (study.status !== 'published') {
-      return res.status(403).json({ message: "This study is not currently available" });
+    if (study.status !== 'active') {
+      return res.status(403).json({ message: "This study is not currently available" });  
     }
+    */
     
     res.json(study);
   } catch (err) {

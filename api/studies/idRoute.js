@@ -2,8 +2,12 @@ import express from "express";
 import { ObjectId } from "mongodb";
 import dbConnect from "../../lib/dbconnect.js";
 import Study from "../../models/study.js";
+import { authMiddleware } from "../../middleware/authMiddleware.js";
 
 const router = express.Router();
+
+// Apply auth middleware to all routes
+router.use(authMiddleware);
 
 // GET /api/studies/:id - Fetch a study by ID
 router.get("/:id", async (req, res) => {
@@ -15,7 +19,11 @@ router.get("/:id", async (req, res) => {
       return res.status(400).json({ error: "Invalid study ID" });
     }
 
-    const study = await Study.findById(studyId);
+    // Add user check
+    const study = await Study.findOne({
+      _id: studyId,
+      userId: req.user._id
+    });
 
     if (!study) {
       return res.status(404).json({ error: "Study not found" });
@@ -32,19 +40,22 @@ router.get("/:id", async (req, res) => {
 router.delete("/:id", async (req, res) => {
   try {
     await dbConnect();
-    const { id: studyId } = req.params;
+    const { id } = req.params;
 
-    if (!ObjectId.isValid(studyId)) {
+    if (!ObjectId.isValid(id)) {
       return res.status(400).json({ error: "Invalid study ID" });
     }
 
-    const deletedStudy = await Study.findByIdAndDelete(studyId);
+    const study = await Study.findOneAndDelete({
+      _id: id,
+      userId: req.user._id
+    });
 
-    if (!deletedStudy) {
-      return res.status(404).json({ error: "Study not found" });
+    if (!study) {
+      return res.status(404).json({ error: "Study not found or unauthorized" });
     }
 
-    res.status(200).json({ message: "Study deleted successfully" });
+    res.json({ message: "Study deleted successfully" });
   } catch (error) {
     console.error("Error deleting study:", error);
     res.status(500).json({ error: "Failed to delete study" });
@@ -58,7 +69,7 @@ router.put("/:id", async (req, res) => {
     const { active, completed, questions, title, description } = req.body; // Extract fields from the request body
     const { id: studyId } = req.params;
 
-    if (!ObjectId.isValid(studyId)) {
+    if (!ObjectId.isValid(id)) {
       return res.status(400).json({ error: "Invalid study ID" });
     }
 
@@ -80,11 +91,11 @@ router.put("/:id", async (req, res) => {
       { new: true } // Return the updated document
     );
 
-    if (!updatedStudy) {
-      return res.status(404).json({ error: "Study not found" });
+    if (!study) {
+      return res.status(404).json({ error: "Study not found or unauthorized" });
     }
 
-    res.status(200).json(updatedStudy);
+    res.json(study);
   } catch (error) {
     console.error("Error updating study:", error);
     res.status(500).json({ error: "Failed to update study" });

@@ -2,7 +2,6 @@ import express from "express";
 import mongoose from "mongoose";
 import Response from "../../models/response.js";
 import Study from "../../models/study.js";
-import { authMiddleware } from "../../middleware/authMiddleware.js";
 
 const router = express.Router();
 
@@ -121,7 +120,7 @@ router.post("/submit", async (req, res) => {
  * @description Get all responses for a study
  * @access Private
  */
-router.get("/study/:studyId", authMiddleware, async (req, res) => {
+router.get("/study/:studyId", async (req, res) => {
   try {
     const studyId = req.params.studyId;
     
