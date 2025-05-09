@@ -56,7 +56,7 @@ async function startServer() {
         app.use("/api/auth/logout", logoutRoute);
         app.use("/api/studies", studiesRoute);
         app.use("/api/studyCreation", studyCreationRoute);
-        app.use("/api/studies/:id", idRoute);
+        app.use("/api/studies", idRoute);
         app.use("/api/studies/:studyId/questions", questionsRoute);
         app.use("/api/upload", uploadRoute);
         app.use("/api/users", usersRoute);
