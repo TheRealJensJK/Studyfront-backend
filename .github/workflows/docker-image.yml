@@ -17,4 +17,4 @@ jobs:
     - name: Build the Docker image
       run: docker build . --file Dockerfile --tag studyfront-backend:$(date +%s)
     - name: Upload docker image to docker hub
-      run: docker push therealjensjk/studyfront:tagname
+      run: docker push therealjensjk/studyfront:latest
