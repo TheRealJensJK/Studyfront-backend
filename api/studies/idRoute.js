@@ -69,7 +69,7 @@ router.put("/:id", async (req, res) => {
     const { active, completed, questions, title, description } = req.body; // Extract fields from the request body
     const { id: studyId } = req.params;
 
-    if (!ObjectId.isValid(id)) {
+    if (!ObjectId.isValid(studyId)) {
       return res.status(400).json({ error: "Invalid study ID" });
     }
 
@@ -91,11 +91,11 @@ router.put("/:id", async (req, res) => {
       { new: true } // Return the updated document
     );
 
-    if (!study) {
+    if (!updatedStudy) {
       return res.status(404).json({ error: "Study not found or unauthorized" });
     }
 
-    res.json(study);
+    res.json(updatedStudy); // Use the correct variable here
   } catch (error) {
     console.error("Error updating study:", error);
     res.status(500).json({ error: "Failed to update study" });
