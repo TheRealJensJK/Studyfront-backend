@@ -13,63 +13,64 @@ import uploadRoute from "./api/upload/route.js";
 import usersRoute from "./api/users/route.js";
 import { authMiddleware } from "./middleware/authMiddleware.js";
 import Result from './api/studies/results.js';
+import responseRoutes from "./api/studyTake/responseRoutes.js";
+import studyTakeRoutes from './api/studyTake/studyRoutes.js';
+import dbConnect from "./lib/dbconnect.js";
 
-dotenv.config({ path:"./.env" }); // Load environment variables
+dotenv.config({ path:"./.env" });
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-app.use(express.json());
 
-// Middleware
 app.use(cors({
-  origin: "http://localhost:3000", // Allow requests from the frontend
-  credentials: true, // Allow cookies and credentials
-  allowedHeaders: ["Content-Type", "Authorization"],
+    origin: "http://localhost:3000",
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
 }));
 
-// Dashboard Route
-app.get('/dashboard', authMiddleware , (req, res) => {
-  const authHeader = req.headers.authorization;
+app.use(express.json());
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ message: 'Unauthorized' });
-  }
+async function startServer() {
+    try {
+        await dbConnect();
 
-  const token = authHeader.split(' ')[1];
+        app.use("/api/responses", responseRoutes);
+        app.use("/api/studies/public", studyTakeRoutes);
 
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET); // Verify the token
-    res.json({ message: 'Welcome to the dashboard!', user: decoded });
-  } catch (error) {
-    res.status(401).json({ message: 'Invalid token', error });
-  }
-});
+        app.get('/dashboard', authMiddleware , (req, res) => {
+            const authHeader = req.headers.authorization;
+            if (!authHeader || !authHeader.startsWith('Bearer ')) {
+                return res.status(401).json({ message: 'Unauthorized' });
+            }
+            const token = authHeader.split(' ')[1];
+            try {
+                const decoded = jwt.verify(token, process.env.JWT_SECRET);
+                res.json({ message: 'Welcome to the dashboard!', user: decoded });
+            } catch (error) {
+                res.status(401).json({ message: 'Invalid token', error });
+            }
+        });
 
-// Signup Route
-app.use("/api/auth", signupRoute);
+        app.use("/api/auth", signupRoute);
+        app.use("/api/auth/logout", logoutRoute);
+        app.use("/api/studies", studiesRoute);
+        app.use("/api/studyCreation", studyCreationRoute);
+        app.use("/api/studies", idRoute);
+        app.use("/api/studies/:studyId/questions", questionsRoute);
+        app.use("/api/upload", uploadRoute);
+        app.use("/api/users", usersRoute);
+        app.use("/api/auth", loginRoute);
+        app.use('/api/results', Result);
 
-app.use("/api/auth/logout", logoutRoute);
+        // Start the server
+        app.listen(PORT, () => {
+            console.log(`Backend server running on http://localhost:${PORT}`);
+        });
 
-app.use("/api/studies", studiesRoute);
+    } catch (error) {
+        console.error("Failed to start server due to database connection error:", error);
+    }
+}
 
-app.use("/api/studyCreation", studyCreationRoute);
-
-app.use("/api/studies", idRoute);
-
-app.use("/api/studies", questionsRoute);
-
-app.use("/api/upload", uploadRoute);
-
-app.use("/api/users", usersRoute);
-
-// Login Route
-app.use("/api/auth", loginRoute);
-
-// results Route
-app.use('/api/results', Result);
-
-// Start the server
-app.listen(PORT, () => {
-  console.log(`Backend server running on http://localhost:${PORT}`);
-
-});
+startServer();
