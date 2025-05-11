@@ -46,7 +46,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
       return res.status(400).json({ error: 'Invalid study ID' });
     }
 
-    const results = await Result.find({ studyId });
+    const results = await Result.find({ studyId: new ObjectId(studyId) });
 
     if (!results || results.length === 0) {
       return res.status(404).json({ error: 'No results found for this study' });
