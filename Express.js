@@ -13,6 +13,7 @@ import uploadRoute from "./api/upload/route.js";
 import usersRoute from "./api/users/route.js";
 import { authMiddleware } from "./middleware/authMiddleware.js";
 import resultsRouter from './api/studies/results.js';
+import responsesRoute from "./api/responses/route.js";
 
 dotenv.config({ path:"./.env" }); // Load environment variables
 
@@ -67,6 +68,9 @@ app.use("/api/auth", loginRoute);
 
 // results Route
 app.use('/api/studies/results', resultsRouter);
+
+// responses Route
+app.use("/api/responses", responsesRoute);
 
 // Start the server
 app.listen(PORT, () => {

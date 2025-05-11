@@ -37,7 +37,7 @@ router.post('/submit', async (req, res) => {
 
   } catch (error) {
     console.error('Error submitting responses:', error);
-    res.status(500).json({ message: 'Failed to submit responses' });
+    res.status(500).json({ message: error.message || 'Failed to submit responses' });
   }
 });
 
