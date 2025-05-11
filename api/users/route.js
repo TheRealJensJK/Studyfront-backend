@@ -1,7 +1,9 @@
 import express from "express";
-import { ObjectId } from "mongodb";
 import dbConnect from "../../lib/dbconnect.js";
-import user from "../../models/user.js";
+import User from "../../models/user.js";
+import { authMiddleware } from "../../middleware/authMiddleware.js";
+import bcrypt from "bcrypt";
+import { ObjectId } from "mongodb";
 
 const router = express.Router();
 
@@ -22,7 +24,7 @@ router.get("/", async (req, res) => {
       return ObjectId(id);
     });
 
-    const users = await user.find({ _id: { $in: userIds } });
+    const users = await User.find({ _id: { $in: userIds } }).select('-password');
 
     if (!users.length) {
       return res.status(404).json({ error: "No users found" });
@@ -35,49 +37,95 @@ router.get("/", async (req, res) => {
   }
 });
 
-// GET /api/user/:id - Fetch a user by ID
-router.get("/:id", async (req, res) => {
+// GET /api/user/:userId - Fetch a user by ID
+router.get("/:userId", authMiddleware, async (req, res) => {
   try {
     await dbConnect();
-    const { id: userId } = req.params;
-
-    if (!ObjectId.isValid(userId)) {
-      return res.status(400).json({ error: "Invalid user ID" });
+    const user = await User.findById(req.params.userId).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
     }
-
-    const User = await user.findById(userId);
-
-    if (!User) {
-      return res.status(404).json({ error: "user not found" });
-    }
-
-    res.status(200).json(User);
+    res.json(user);
   } catch (error) {
-    console.error("Failed fetching user:", error);
-    res.status(500).json({ error: "Failed to fetch user" });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
-// DELETE /api/users/:id - Delete a user by ID
-router.delete("/:id", async (req, res) => {
+// Update email
+router.put("/:userId/email", authMiddleware, async (req, res) => {
   try {
     await dbConnect();
-    const { id: userId } = req.params;
+    const { email } = req.body;
 
-    if (!ObjectId.isValid(userId)) {
-      return res.status(400).json({ error: "Invalid user ID" });
+    // Validate email
+    if (!email || !email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+      return res.status(400).json({ message: "Invalid email format" });
     }
 
-    const deletedUser = await user.findByIdAndDelete(userId);
-
-    if (!deletedUser) {
-      return res.status(404).json({ error: "User not found" });
+    // Check if email is already in use
+    const existingUser = await User.findOne({ email });
+    if (existingUser && existingUser._id.toString() !== req.params.userId) {
+      return res.status(400).json({ message: "Email already in use" });
     }
 
-    res.status(200).json({ message: "User deleted successfully", user: deletedUser });
+    const user = await User.findByIdAndUpdate(
+      req.params.userId,
+      { email },
+      { new: true }
+    ).select('-password');
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json(user);
   } catch (error) {
-    console.error("Failed to delete user:", error);
-    res.status(500).json({ error: "Failed to delete user" });
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Update password
+router.put("/:userId/password", authMiddleware, async (req, res) => {
+  try {
+    await dbConnect();
+    const { currentPassword, newPassword } = req.body;
+
+    const user = await User.findById(req.params.userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Verify current password
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Current password is incorrect" });
+    }
+
+    // Hash new password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    // Update password
+    user.password = hashedPassword;
+    await user.save();
+
+    res.json({ message: "Password updated successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// DELETE /api/users/:userId - Delete a user by ID
+router.delete("/:userId", authMiddleware, async (req, res) => {
+  try {
+    await dbConnect();
+    const user = await User.findByIdAndDelete(req.params.userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.json({ message: "User deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
   }
 });
 
