@@ -3,7 +3,7 @@ import File from './file.js';
 
 const questionSchema = new Schema({
   _id: { type: Schema.Types.ObjectId, default: () => new mongoose.Types.ObjectId() },
-  id: { type: String, required: true },
+  id: { type: String },
   title: { type: String },
   type: { type: String, required: true },
   data: { type: Schema.Types.Mixed, required: true },
@@ -20,6 +20,8 @@ const studySchema = new Schema(
       type: String,
       required: true,
     },
+    hasTermsAndConditions: { type: Boolean, default: false },
+    termsAndConditions: { type: String },
     active: { type: Boolean, default: false },
     completed: { type: Boolean, default: false },
     userId: {
