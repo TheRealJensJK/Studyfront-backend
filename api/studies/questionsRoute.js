@@ -60,27 +60,36 @@ router.post("/:id/questions", async (req, res) => {
 router.put("/:id/questions/:questionId", async (req, res) => {
   try {
     await dbConnect();
-    const { data } = req.body;
+    const { data } = req.body; // Extract the data to update
     const { id: studyId, questionId } = req.params;
 
     // Check ownership
     await checkStudyOwnership(studyId, req.user._id);
 
-    const updatedStudy = await Study.findOneAndUpdate(
-      { _id: studyId, "questions._id": new ObjectId(questionId) },
-      { $set: { "questions.$.data": data } },
-      { new: true }
-    );
+    // Find the study and the specific question
+    const study = await Study.findOne({ _id: studyId, "questions._id": new ObjectId(questionId) });
+    if (!study) {
+      return res.status(404).json({ error: "Study or question not found" });
+    }
 
-    if (!updatedStudy) {
+    // Find the existing question
+    const question = study.questions.find((q) => q._id.toString() === questionId);
+    if (!question) {
       return res.status(404).json({ error: "Question not found" });
     }
+
+    // Merge the existing data with the new data
+    question.data = { ...question.data, ...data };
+
+    // Save the updated study
+    const updatedStudy = await study.save();
 
     res.status(200).json(updatedStudy);
   } catch (error) {
     console.error("Failed to update the question", error);
-    res.status(error.message.includes("unauthorized") ? 403 : 500)
-       .json({ error: error.message || "Failed to update the question" });
+    res.status(error.message.includes("unauthorized") ? 403 : 500).json({
+      error: error.message || "Failed to update the question",
+    });
   }
 });
 
@@ -142,6 +151,46 @@ router.get("/:id/questions/:questionId", async (req, res) => {
     console.error("Error getting the question", error);
     res.status(error.message.includes("unauthorized") ? 403 : 500)
        .json({ error: error.message || "Failed to get question" });
+  }
+});
+
+// PUT /api/studies/:id/questions - Replace the entire questions array
+router.put("/:id/questions", async (req, res) => {
+  try {
+    await dbConnect();
+    const { questions } = req.body; // Extract the questions array from the request body
+    const { id: studyId } = req.params;
+
+    // Check ownership
+    await checkStudyOwnership(studyId, req.user._id);
+
+    if (!Array.isArray(questions)) {
+      return res.status(400).json({ error: "Questions must be an array" });
+    }
+
+    // Ensure each question has a valid _id
+    const processedQuestions = questions.map((question) => {
+      if (!question._id) {
+        question._id = new ObjectId(); // Generate a new _id if not provided
+      }
+      return question;
+    });
+
+    const updatedStudy = await Study.findByIdAndUpdate(
+      studyId,
+      { $set: { questions: processedQuestions } }, // Replace the entire questions array
+      { new: true } // Return the updated document
+    );
+
+    if (!updatedStudy) {
+      return res.status(404).json({ error: "Study not found" });
+    }
+
+    res.status(200).json(updatedStudy);
+  } catch (error) {
+    console.error("Error updating questions", error);
+    res.status(error.message.includes("unauthorized") ? 403 : 500)
+       .json({ error: error.message || "Failed to update questions" });
   }
 });
 
