@@ -46,7 +46,7 @@ app.get('/dashboard', authMiddleware , (req, res) => {
 });
 
 // Signup Route
-app.use("/api/auth", signupRoute);
+app.use("/auth", signupRoute);
 
 app.use("/api/auth/logout", logoutRoute);
 
