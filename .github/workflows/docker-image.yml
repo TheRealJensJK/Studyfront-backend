@@ -1,5 +1,6 @@
 name: Docker Image CI
 
+
 on:
   push:
     branches: [ "main" ]
@@ -9,10 +10,22 @@ on:
 jobs:
 
   build:
-
+    environment: Docker
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
-    - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag studyfront-backend:$(date +%s)
+
+    - name: Log in to Docker Hub
+      run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+    - name: Build and push the backend Docker image
+      run: |
+        docker build . --file Dockerfile --tag therealjensjk/studyfront:Backend
+        docker push therealjensjk/studyfront:Backend
+
+    - name: Pull, tag, and push the database Docker image
+      run: |
+        docker pull mongo:6.0
+        docker tag mongo:6.0 therealjensjk/studyfront:Database
+        docker push therealjensjk/studyfront:Database
