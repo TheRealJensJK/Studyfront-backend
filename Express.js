@@ -10,6 +10,7 @@ import studyCreationRoute from "./api/studyCreation/route.js";
 import idRoute from "./api/studies/idRoute.js";
 import questionsRoute from "./api/studies/questionsRoute.js";
 import uploadRoute from "./api/upload/route.js";
+import filesRoute from "./api/studies/filesRoute.js";
 import usersRoute from "./api/users/route.js";
 import { authMiddleware } from "./middleware/authMiddleware.js";
 import resultsRouter from './api/studies/results.js';
@@ -48,6 +49,7 @@ async function startServer() {
         app.use("/api/studies", questionsRoute);
         app.use("/api/studies/results", resultsRouter);
         app.use("/api/studyCreation", studyCreationRoute);
+        app.use("/api/studies", filesRoute);
 
         // Other routes
         app.use("/api/upload", uploadRoute);
