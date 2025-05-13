@@ -47,7 +47,7 @@ router.get("/:userId", authMiddleware, async (req, res) => {
     }
     res.json(user);
   } catch (error) {
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Server error", error });
   }
 });
 
@@ -80,7 +80,7 @@ router.put("/:userId/email", authMiddleware, async (req, res) => {
 
     res.json(user);
   } catch (error) {
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Server error", error });
   }
 });
 
@@ -111,7 +111,7 @@ router.put("/:userId/password", authMiddleware, async (req, res) => {
 
     res.json({ message: "Password updated successfully" });
   } catch (error) {
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Server error", error });
   }
 });
 
@@ -125,7 +125,7 @@ router.delete("/:userId", authMiddleware, async (req, res) => {
     }
     res.json({ message: "User deleted successfully" });
   } catch (error) {
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Server error", error });
   }
 });
 
