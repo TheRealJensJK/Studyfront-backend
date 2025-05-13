@@ -37,9 +37,9 @@ async function startServer() {
         await dbConnect();
 
         // Authentication routes
-        app.use("/auth/signup", signupRoute);
-        app.use("/auth/login", loginRoute);
-        app.use("/auth/logout", logoutRoute);
+        app.use("/api/auth/signup", signupRoute);
+        app.use("/api/auth/login", loginRoute);
+        app.use("/api/auth/logout", logoutRoute);
 
         // Study routes
         app.use("/api/studies", studiesRoute);
