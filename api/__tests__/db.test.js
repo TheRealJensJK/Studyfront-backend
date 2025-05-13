@@ -12,6 +12,7 @@ describe('Database Connection', () => {
 
     test('should connect to the database successfully', async () => {
         const state = mongoose.connection.readyState;
+        expect(state).toBe(1);
     });
 
     test('should throw an error for invalid connection string', async () => {

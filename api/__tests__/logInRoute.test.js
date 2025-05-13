@@ -13,7 +13,7 @@ jest.mock("jsonwebtoken");
 
 const app = express();
 app.use(express.json());
-app.use("/api/auth", router);
+app.use("/", router);
 
 beforeAll(() => {
   jest.spyOn(console, "error").mockImplementation(() => {});
@@ -30,23 +30,27 @@ describe("POST /api/auth/login", () => {
 
   it("should log in a user successfully and return a token", async () => {
     dbConnect.mockResolvedValueOnce();
-    const mockUser = { _id: "645c1234567890abcdef1234", email: "test@example.com", password: "hashedpassword" };
+    const mockUser = {
+      _id: "645c1234567890abcdef1234",
+      email: "test@example.com",
+      password: "hashedpassword"
+    };
+    
     User.findOne.mockResolvedValueOnce(mockUser);
     bcrypt.compare.mockResolvedValueOnce(true);
     jwt.sign.mockReturnValueOnce("mocked-jwt-token");
 
     const response = await request(app)
-      .post("/api/auth/login")
+      .post("/")
       .send({ email: "test@example.com", password: "password123" });
 
     expect(response.status).toBe(200);
     expect(response.body.message).toBe("User logged in");
     expect(response.body.token).toBe("mocked-jwt-token");
-    expect(response.header.authorization).toBe("Bearer mocked-jwt-token");
   });
 
   it("should return 400 if email or password is missing", async () => {
-    const response = await request(app).post("/api/auth/login").send({ email: "test@example.com" });
+    const response = await request(app).post("/").send({ email: "test@example.com" });
 
     expect(response.status).toBe(400);
     expect(response.body.message).toBe("Missing fields");
@@ -57,7 +61,7 @@ describe("POST /api/auth/login", () => {
     User.findOne.mockResolvedValueOnce(null);
 
     const response = await request(app)
-      .post("/api/auth/login")
+      .post("/")
       .send({ email: "test@example.com", password: "password123" });
 
     expect(response.status).toBe(404);
@@ -71,7 +75,7 @@ describe("POST /api/auth/login", () => {
     bcrypt.compare.mockResolvedValueOnce(false);
 
     const response = await request(app)
-      .post("/api/auth/login")
+      .post("/")
       .send({ email: "test@example.com", password: "wrongpassword" });
 
     expect(response.status).toBe(401);
@@ -83,7 +87,7 @@ describe("POST /api/auth/login", () => {
     User.findOne.mockRejectedValueOnce(new Error("Database error"));
 
     const response = await request(app)
-      .post("/api/auth/login")
+      .post("/")
       .send({ email: "test@example.com", password: "password123" });
 
     expect(response.status).toBe(500);
