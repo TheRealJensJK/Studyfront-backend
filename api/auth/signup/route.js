@@ -6,7 +6,7 @@ import User from "../../../models/user.js";
 const router = express.Router();
 
 // POST /api/auth/signup
-router.post("/signup", async (req, res) => {
+router.post("/", async (req, res) => {
   try {
     await dbConnect();
     const { name, email, password } = req.body;
