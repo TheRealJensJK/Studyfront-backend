@@ -22,7 +22,7 @@ app.use(express.json());
 
 // Middleware
 app.use(cors({
-  origin: "http://localhost:3000", // Allow requests from the frontend
+  origin: [ "http://localhost:3000",'https://group5.sustainability.it.ntnu.no'], // Allow requests from the frontend
   credentials: true, // Allow cookies and credentials
   allowedHeaders: ["Content-Type", "Authorization"],
 }));
