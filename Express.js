@@ -75,10 +75,7 @@ app.use('/api/studies/results', resultsRouter);
 // responses Route
 app.use("/api/responses", responsesRoute);
 
-// Start the server
-app.listen(PORT, () => {
-  console.log(`Backend server running on http://localhost:${PORT}`);
-
+// Define server startup function
 async function startServer() {
     try {
         await dbConnect();
