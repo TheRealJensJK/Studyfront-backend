@@ -142,17 +142,28 @@ router.get("/study/:studyId", async (req, res) => {
   }
 });
 
-// Helper function to validate response types
-function validateResponseType(response, questionType) {
+// Helper function to validate response types with more flexibility
+function validateResponseType(response, questionType) {  
+  if (response === null || response === undefined) {
+    return false;
+  }
+
+  if (typeof response === 'object' && !Array.isArray(response) && response !== null) {
+    return true;
+  }
+  
+  if (Array.isArray(response)) {
+    return true;
+  }
   switch (questionType) {
     case 'text':
-      return typeof response === 'string';
+      return typeof response === 'string' || typeof response === 'object';
     case 'number':
       return typeof response === 'number' && !isNaN(response);
     case 'boolean':
       return typeof response === 'boolean';
     case 'multiChoice':
-      return Array.isArray(response) && response.every(item => typeof item === 'string');
+      return Array.isArray(response) || typeof response === 'string';
     default:
       return true;
   }
