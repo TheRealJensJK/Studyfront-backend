@@ -35,6 +35,9 @@ const studySchema = new Schema(
       type: Date,
       default: Date.now,
     },
+    endDate: { type: Date },
+    timedStudy: { type: Boolean, default: false },
+    startedAt: { type: Date },
   },
   { timestamps: true }
 );
