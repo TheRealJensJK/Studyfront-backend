@@ -102,19 +102,24 @@ router.post("/submit", async (req, res) => {
     const completionToken = uuidv4();
                     
     const newResponse = new Response({
-      studyId,
-      participantId,
-      visitorId,
-      completionToken,
-      startTime: parsedStartTime.toISOString(),
-      endTime: parsedEndTime.toISOString(),
-      demographics: demographics || {},
-      responses: responses.map(r => ({
-        questionId: r.questionId,
-        response: typeof r.response === 'string' ? r.response.trim() : r.response,
-        timestamp: r.timestamp ? new Date(r.timestamp).toISOString() : currentTime.toISOString()
-      }))
-    });
+  studyId,
+  participantId,
+  visitorId,
+  completionToken,
+  startTime: parsedStartTime.toISOString(),
+  endTime: parsedEndTime.toISOString(),
+  demographics: demographics || {},
+  responses: responses.map(r => {
+    const question = studyQuestions[r.questionId.toString()];
+    return {
+      questionId: r.questionId,
+      questionText: question?.data?.title || "Unknown Question",
+      questionType: question?.type || "unknown",
+      response: typeof r.response === 'string' ? r.response.trim() : r.response,
+      timestamp: r.timestamp ? new Date(r.timestamp).toISOString() : currentTime.toISOString()
+    };
+  })
+});
 
     await newResponse.save();
 
