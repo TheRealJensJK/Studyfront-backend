@@ -43,6 +43,14 @@ const responseSchema = new mongoose.Schema({
       ref: "Question",
       required: true
     },
+    questionText: {
+      type: String,
+      default: ""
+    },
+    questionType: {
+      type: String,
+      default: ""
+    },
     response: {
       type: mongoose.Schema.Types.Mixed,
       required: true

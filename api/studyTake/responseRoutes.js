@@ -39,7 +39,7 @@ router.post("/submit", async (req, res) => {
     }
     
     // Validate study exists and get questions
-    const study = await Study.findById(studyId);
+    const study = await Study.findById(studyId).populate('questions');
     if (!study) {
       return res.status(404).json({ message: "Study not found" });
     }
@@ -109,11 +109,17 @@ router.post("/submit", async (req, res) => {
       startTime: parsedStartTime.toISOString(),
       endTime: parsedEndTime.toISOString(),
       demographics: demographics || {},
-      responses: responses.map(r => ({
-        questionId: r.questionId,
-        response: typeof r.response === 'string' ? r.response.trim() : r.response,
-        timestamp: r.timestamp ? new Date(r.timestamp).toISOString() : currentTime.toISOString()
-      }))
+      responses: responses.map(r => {
+        const questionId = r.questionId;
+        const question = studyQuestions[questionId.toString()];
+        return {
+          questionId: questionId,
+          questionText: question?.data?.title || question?.data?.prompt || "Unknown Question",
+          questionType: question?.type || "Unknown Type",
+          response: typeof r.response === 'string' ? r.response.trim() : r.response,
+          timestamp: r.timestamp ? new Date(r.timestamp).toISOString() : currentTime.toISOString()
+        };
+      })
     });
 
     await newResponse.save();
@@ -146,21 +152,37 @@ router.get("/study/:studyId", async (req, res) => {
   try {
     const studyId = req.params.studyId;
     
+    // Validate study ID format
     if (!mongoose.Types.ObjectId.isValid(studyId)) {
       return res.status(400).json({ message: "Invalid study ID format" });
     }
     
-    const responses = await Response.find({ studyId })
-      .populate('studyId', 'title description')
-      .lean();
-      
-    res.json(responses);
+    // Get study details to access questions
+    const study = await Study.findById(studyId);
+    if (!study) {
+      return res.status(404).json({ message: "Study not found" });
+    }
+    
+    // Create question map
+    const questionMap = {};
+    study.questions.forEach(question => {
+      questionMap[question._id.toString()] = {
+        title: question.data?.title || question.data?.prompt || "Untitled Question",
+        label: question.data?.title || question.data?.prompt || `Question ${question._id}`,
+        type: question.type
+      };
+    });
+    
+    // Get all responses for this study
+    const responses = await Response.find({ studyId }).lean();
+    
+    // Format responses using the existing data in the responses
+    const formattedResponses = responses.map(response => formatResponseData(response, questionMap));
+    
+    res.json(formattedResponses);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ 
-      message: "Failed to fetch study responses",
-      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
-    });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
@@ -371,12 +393,17 @@ function formatResponseData(response, questionMap) {
     duration: new Date(response.endTime) - new Date(response.startTime),
     answers: response.responses.map(resp => {
       const questionId = resp.questionId.toString();
-      const questionInfo = questionMap[questionId] || { title: "Unknown Question" };
+      // First try to get from question map, then fall back to stored values
+      const questionInfo = questionMap[questionId] || { 
+        title: resp.questionText || "Unknown Question",
+        type: resp.questionType || "Unknown Type"
+      };
       
       return {
         questionId: questionId,
-        questionTitle: questionInfo.title,
-        questionLabel: questionInfo.label || questionInfo.title,
+        questionTitle: resp.questionText || questionInfo.title,
+        questionLabel: resp.questionText || questionInfo.label || questionInfo.title,
+        questionType: resp.questionType || questionInfo.type,
         answer: resp.response,
         timestamp: resp.timestamp
       };
