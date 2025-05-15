@@ -13,7 +13,7 @@ const router = express.Router();
  */
 router.post("/submit", async (req, res) => {
   try {
-    const { studyId, participantId, visitorId, startTime, endTime, responses } = req.body;
+    const { studyId, participantId, visitorId, startTime, endTime, responses, demographics } = req.body;
 
     // Add validation for visitorId
     if (!studyId || !participantId || !visitorId || !responses || !Array.isArray(responses)) {
@@ -108,6 +108,7 @@ router.post("/submit", async (req, res) => {
       completionToken,
       startTime: parsedStartTime.toISOString(),
       endTime: parsedEndTime.toISOString(),
+      demographics: demographics || {},
       responses: responses.map(r => ({
         questionId: r.questionId,
         response: typeof r.response === 'string' ? r.response.trim() : r.response,
