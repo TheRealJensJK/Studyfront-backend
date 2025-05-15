@@ -66,7 +66,7 @@ router.delete("/:id", async (req, res) => {
 router.put("/:id", async (req, res) => {
   try {
     await dbConnect();
-    const { active, completed, startedAt, timedStudy, endDate, questions, title, description, hasTermsAndConditions, termsAndConditions } = req.body; // Extract fields from the request body
+    const { active, completed, startedAt, timedStudy, endDate, questions, title, description, hasTermsAndConditions, termsAndConditions, hasDemographics } = req.body; // Extract fields from the request body
     const { id: studyId } = req.params;
 
     if (!ObjectId.isValid(studyId)) {
@@ -84,6 +84,7 @@ router.put("/:id", async (req, res) => {
     if (description) updateFields.description = description;
     if (typeof hasTermsAndConditions !== "undefined") updateFields.hasTermsAndConditions = hasTermsAndConditions;
     if (termsAndConditions) updateFields.termsAndConditions = termsAndConditions;
+    if (typeof hasDemographics !== "undefined") updateFields.hasDemographics = hasDemographics;
 
     // Append new questions instead of overwriting
     if (questions) {
