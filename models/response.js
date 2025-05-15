@@ -31,6 +31,12 @@ const responseSchema = new mongoose.Schema({
     type: Date,
     required: true
   },
+  demographics: {
+    age: String,
+    gender: String,
+    education: String,
+    occupation: String
+  },
   responses: [{
     questionId: {
       type: mongoose.Schema.Types.ObjectId,
