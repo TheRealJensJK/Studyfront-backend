@@ -2,6 +2,7 @@ import express from "express";
 import mongoose from "mongoose";
 import Response from "../../models/response.js";
 import Study from "../../models/study.js";
+import { v4 as uuidv4 } from 'uuid'; // Make sure to install this package
 
 const router = express.Router();
 
@@ -12,10 +13,10 @@ const router = express.Router();
  */
 router.post("/submit", async (req, res) => {
   try {
-    const { studyId, participantId, startTime, endTime, responses } = req.body;
+    const { studyId, participantId, visitorId, startTime, endTime, responses } = req.body;
 
-    // Validate required fields
-    if (!studyId || !participantId || !responses || !Array.isArray(responses)) {
+    // Add validation for visitorId
+    if (!studyId || !participantId || !visitorId || !responses || !Array.isArray(responses)) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
@@ -24,18 +25,25 @@ router.post("/submit", async (req, res) => {
       return res.status(400).json({ message: "Invalid study ID format" });
     }
 
-    // Check for existing response from this participant
-    const existingResponse = await Response.findOne({ studyId, participantId });
-    if (existingResponse) {
-      return res.status(400).json({ message: "Participant has already submitted responses for this study" });
+    // Check for existing participation with visitorId or cookie
+    const existingResponse = await Response.findOne({ 
+      studyId,
+      visitorId: visitorId
+    });
+    
+    // Check completion cookie
+    const completionCookie = req.cookies[`study_completed_${studyId}`];
+    
+    if (existingResponse || completionCookie) {
+      return res.status(409).json({ message: "Participant has already submitted responses for this study" });
     }
-
+    
     // Validate study exists and get questions
     const study = await Study.findById(studyId);
     if (!study) {
       return res.status(404).json({ message: "Study not found" });
     }
-
+    
     // Validate timestamps
     const currentTime = new Date();
     const parsedStartTime = startTime ? new Date(startTime) : currentTime;
@@ -90,10 +98,14 @@ router.post("/submit", async (req, res) => {
       }
     }
 
-    // Create new response record
+    // Generate a unique completion token
+    const completionToken = uuidv4();
+                    
     const newResponse = new Response({
       studyId,
       participantId,
+      visitorId,
+      completionToken,
       startTime: parsedStartTime.toISOString(),
       endTime: parsedEndTime.toISOString(),
       responses: responses.map(r => ({
@@ -104,6 +116,15 @@ router.post("/submit", async (req, res) => {
     });
 
     await newResponse.save();
+
+    // Set completion cookie
+    const oneYear = 365 * 24 * 60 * 60 * 1000;
+    res.cookie(`study_completed_${studyId}`, completionToken, {
+      maxAge: oneYear,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax'
+    });
 
     res.status(201).json({ message: "Responses submitted successfully" });
   } catch (err) {
@@ -137,6 +158,41 @@ router.get("/study/:studyId", async (req, res) => {
     console.error(err);
     res.status(500).json({ 
       message: "Failed to fetch study responses",
+      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+    });
+  }
+});
+
+// Simplified check-participation endpoint
+router.post("/check-participation", async (req, res) => {
+  try {
+    const { studyId, visitorId } = req.body;
+
+    // Validate required fields
+    if (!studyId || !visitorId) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    // Validate study ID format
+    if (!mongoose.Types.ObjectId.isValid(studyId)) {
+      return res.status(400).json({ message: "Invalid study ID format" });
+    }
+    
+    // Check if this visitor has already submitted using visitorId or completion cookie
+    const existingResponse = await Response.findOne({
+      studyId,
+      visitorId: visitorId
+    });
+    
+    // Check completion cookie
+    const completionCookie = req.cookies[`study_completed_${studyId}`];
+    
+    // Simplified response with combined check
+    res.json({ hasParticipated: !!existingResponse || !!completionCookie });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ 
+      message: "Failed to check participation status",
       error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
     });
   }

@@ -17,11 +17,15 @@ import resultsRouter from './api/studies/results.js';
 import responseRoutes from "./api/studyTake/responseRoutes.js";
 import studyTakeRoutes from './api/studyTake/studyRoutes.js';
 import dbConnect from "./lib/dbconnect.js";
+import cookieParser from 'cookie-parser';
+
 
 dotenv.config({ path: "./.env" });
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+app.use(cookieParser());
 
 // Middleware
 app.use(express.json());

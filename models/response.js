@@ -10,6 +10,19 @@ const responseSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  visitorId: {
+    type: String,
+    required: true,
+    index: true 
+  },
+  ipAddress: {
+    type: String,
+    index: true
+  },
+  completionToken: {
+    type: String,
+    index: true
+  },
   startTime: {
     type: Date,
     required: true
