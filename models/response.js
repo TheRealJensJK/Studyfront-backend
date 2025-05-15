@@ -45,11 +45,11 @@ const responseSchema = new mongoose.Schema({
     },
     questionText: {
       type: String,
-      default: "Question text not available"
+      default: ""
     },
     questionType: {
       type: String,
-      default: "unknown"
+      default: ""
     },
     response: {
       type: mongoose.Schema.Types.Mixed,
