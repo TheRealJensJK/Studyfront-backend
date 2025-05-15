@@ -20,6 +20,7 @@ const studySchema = new Schema(
       type: String,
       required: true,
     },
+    hasDemographics: { type: Boolean, default: false },
     hasTermsAndConditions: { type: Boolean, default: false },
     termsAndConditions: { type: String },
     active: { type: Boolean, default: false },
