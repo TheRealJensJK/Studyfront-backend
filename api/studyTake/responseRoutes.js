@@ -198,6 +198,247 @@ router.post("/check-participation", async (req, res) => {
   }
 });
 
+/**
+ * @route GET /api/responses/download/:studyId
+ * @description Download formatted responses for a study
+ * @access Private
+ */
+router.get("/download/:studyId", async (req, res) => {
+  try {
+    const studyId = req.params.studyId;
+    
+    if (!mongoose.Types.ObjectId.isValid(studyId)) {
+      return res.status(400).json({ message: "Invalid study ID format" });
+    }
+    
+    // Get study details
+    const study = await Study.findById(studyId).lean();
+    if (!study) {
+      return res.status(404).json({ message: "Study not found" });
+    }
+    
+    // Get all responses for this study
+    const responses = await Response.find({ studyId })
+      .lean()
+      .sort({ createdAt: 1 });
+    
+    // Create a map of question IDs to question details for quick lookup
+    const questionMap = {};
+    study.questions.forEach(question => {
+      questionMap[question._id.toString()] = {
+        title: question.data?.title || question.data?.prompt || "Untitled Question",
+        label: question.data?.title || question.data?.prompt || `Question ${question._id}`,
+        type: question.type
+      };
+    });
+      
+    // Format the response data
+    const formattedData = {
+      study: {
+        id: study._id.toString(),
+        title: study.title,
+        description: study.description,
+        createdAt: study.createdAt,
+        hasTermsAndConditions: study.hasTermsAndConditions,
+        active: study.active,
+        completed: study.completed
+      },
+      questions: study.questions.map(question => ({
+        id: question._id.toString(),
+        title: question.data?.title || question.data?.prompt || "Untitled Question",
+        label: question.data?.title || question.data?.prompt || `Question ${question._id}`,
+        type: question.type,
+        artifacts: (question.data?.artifacts || []).map(artifact => ({
+          id: artifact.id,
+          label: artifact.label || artifact.title || artifact.name || "Unnamed artifact",
+          name: artifact.name,
+          contentType: artifact.contentType
+        })),
+        groups: formatQuestionGroups(question)
+      })),
+      responses: {
+        all: responses.map(response => formatResponseData(response, questionMap)),
+        byParticipant: groupResponsesByParticipant(responses, questionMap),
+        byQuestion: groupResponsesByQuestion(responses, study.questions)
+      },
+      metadata: {
+        totalResponses: responses.length,
+        exportedAt: new Date().toISOString()
+      }
+    };
+    
+    res.json(formattedData);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ 
+      message: "Failed to format and download responses",
+      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+    });
+  }
+});
+
+// Helper function to format question groups based on question type
+function formatQuestionGroups(question) {
+  const type = question.type?.toLowerCase();
+  const data = question.data || {};
+  
+  // Handle different question types
+  switch(type) {
+    case 'multiplechoice':
+    case 'multiple choice':
+      return (data.choiceGroups || []).map(group => ({
+        id: group.id,
+        label: group.label || group.name || "Choice group",
+        options: group.options?.map(option => ({
+          id: option.id,
+          text: option.text,
+          label: option.label || option.text
+        })) || []
+      }));
+    case 'checkbox':
+      return (data.checkboxGroups || []).map(group => ({
+        id: group.id,
+        label: group.label || group.name || "Checkbox group",
+        options: group.options?.map(option => ({
+          id: option.id,
+          text: option.text,
+          label: option.label || option.text
+        })) || []
+      }));
+    case 'ratingscale':
+    case 'rating':
+    case 'rating scale':
+      return (data.ratingScales || []).map(scale => ({
+        id: scale.id,
+        label: scale.label || scale.name || "Rating scale",
+        min: scale.min,
+        max: scale.max
+      }));
+    case 'dropdown':
+      return (data.dropdowns || []).map(dropdown => ({
+        id: dropdown.id,
+        label: dropdown.label || dropdown.name || "Dropdown",
+        options: dropdown.options?.map(option => ({
+          id: option.id,
+          text: option.text,
+          label: option.label || option.text
+        })) || []
+      }));
+    case 'ranking':
+      return (data.rankGroups || []).map(group => ({
+        id: group.id,
+        label: group.label || group.name || "Ranking group",
+        options: group.options?.map(option => ({
+          id: option.id,
+          text: option.text,
+          label: option.label || option.text
+        })) || []
+      }));
+    case 'matrix':
+      return (data.matrixGroups || []).map(group => ({
+        id: group.id,
+        label: group.label || group.name || "Matrix group",
+        verticalItems: group.verticalItems?.map(item => ({
+          id: item.id,
+          text: item.text,
+          label: item.label || item.text
+        })) || [],
+        horizontalItems: group.horizontalItems?.map(item => ({
+          id: item.id,
+          text: item.text,
+          label: item.label || item.text
+        })) || []
+      }));
+    case 'text':
+      return (data.textAreas || []).map(area => ({
+        id: area.id,
+        label: area.label || "Text input"
+      }));
+    default:
+      return [];
+  }
+}
+
+// Helper to format a single response
+function formatResponseData(response, questionMap) {
+  return {
+    id: response._id.toString(),
+    participantId: response.participantId,
+    visitorId: response.visitorId,
+    startTime: response.startTime,
+    endTime: response.endTime,
+    duration: new Date(response.endTime) - new Date(response.startTime),
+    answers: response.responses.map(resp => {
+      const questionId = resp.questionId.toString();
+      const questionInfo = questionMap[questionId] || { title: "Unknown Question" };
+      
+      return {
+        questionId: questionId,
+        questionTitle: questionInfo.title,
+        questionLabel: questionInfo.label || questionInfo.title,
+        answer: resp.response,
+        timestamp: resp.timestamp
+      };
+    }),
+    createdAt: response.createdAt
+  };
+}
+
+// Group responses by participant
+function groupResponsesByParticipant(responses, questionMap) {
+  const byParticipant = {};
+  
+  responses.forEach(response => {
+    if (!byParticipant[response.participantId]) {
+      byParticipant[response.participantId] = [];
+    }
+    byParticipant[response.participantId].push(formatResponseData(response, questionMap));
+  });
+  
+  return byParticipant;
+}
+
+// Group responses by question
+function groupResponsesByQuestion(responses, questions) {
+  const byQuestion = {};
+  
+  // Initialize with empty arrays for each question
+  questions.forEach(question => {
+    const questionId = question._id.toString();
+    const questionTitle = question.data?.title || question.data?.prompt || "Untitled Question";
+    
+    byQuestion[questionId] = {
+      questionId: questionId,
+      label: questionTitle,
+      title: questionTitle,
+      type: question.type,
+      artifacts: (question.data?.artifacts || []).map(artifact => ({
+        id: artifact.id,
+        label: artifact.label || artifact.title || artifact.name || "Unnamed artifact",
+        name: artifact.name,
+        contentType: artifact.contentType
+      })),
+      answers: []
+    };
+  });
+  
+  // Add all answers to their respective questions
+  responses.forEach(response => {
+    response.responses.forEach(resp => {
+      const questionId = resp.questionId.toString();
+      if (byQuestion[questionId]) {
+        byQuestion[questionId].answers.push({
+          participantId: response.participantId,
+          answer: resp.response,
+          timestamp: resp.timestamp
+        });
+      }
+    });
+  });
+  
+  return byQuestion;
+}
+
 // Helper function to validate response types with more flexibility
 function validateResponseType(response, questionType) {  
   if (response === null || response === undefined) {
